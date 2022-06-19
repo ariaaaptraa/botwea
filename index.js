@@ -1,18 +1,21 @@
-console.log('Memulai...')
-let { spawn } = require('child_process')
+console.log('Starting...')
+let cluster = require('cluster')
 let path = require('path')
 let fs = require('fs')
 let package = require('./package.json')
 const CFonts = require('cfonts')
-CFonts.say('AriaBotz', {
-  colors: ['#f2aa4c'],
-  font: 'block',
+const Readline = require('readline')
+const yargs = require('yargs/yargs')
+const rl = Readline.createInterface(process.stdin, process.stdout)
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+
+CFonts.say('BOT BY\n Helga', {
+  colors: ['blueBright','yellowBright'],                                        font: 'block',
   align: 'center',
 })
-CFonts.say(`'${package.name}' Oleh @${package.author.name || package.author}`, {
-  colors: ['#f2aa4c'],
-  font: 'console',
-  align: 'center',
+CFonts.say(`BY Helga Zexs`, {                                            
+colors: ['yellow'],                                                           
+font: 'console',                                                              align: 'center',
 })
 
 var isRunning = false
@@ -25,13 +28,15 @@ function start(file) {
   isRunning = true
   let args = [path.join(__dirname, file), ...process.argv.slice(2)]
   CFonts.say([process.argv[0], ...args].join(' '), {
-    colors: ['#f2aa4c'],
     font: 'console',
     align: 'center',
+    gradient: ['red', 'magenta']
   })
-  let p = spawn(process.argv[0], args, {
-    stdio: ['inherit', 'inherit', 'inherit', 'ipc']
+  cluster.setupMaster({
+    exec: path.join(__dirname, file),
+    args: args.slice(1),
   })
+  let p = cluster.fork()
   p.on('message', data => {
     console.log('[RECEIVED]', data)
     switch (data) {
@@ -54,6 +59,11 @@ function start(file) {
       start(file)
     })
   })
+  let opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse())
+  if (!opts['test'])
+    if (!rl.listenerCount()) rl.on('line', line => {
+      p.emit('message', line.trim())
+    })
   // console.log(p)
 }
 
